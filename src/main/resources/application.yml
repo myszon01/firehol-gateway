@@ -1,0 +1,10 @@
+micronaut:
+  application:
+    name: fireholGateway
+github:
+  organization: micronaut-projects
+  repo: micronaut-core
+elasticsearch:
+  username: "admin"
+  password: "admin"
+  baseUrl: https://localhost:9200
