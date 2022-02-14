@@ -1,6 +1,9 @@
 package com.myszon.model;
 
-public class IpAddress {
+import io.micronaut.core.annotation.Introspected;
+
+@Introspected
+public class IpAddress{
 
     private String ipAddress;
 

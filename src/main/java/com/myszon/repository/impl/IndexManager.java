@@ -46,11 +46,6 @@ public class IndexManager implements IIndexManager {
     }
 
     @Override
-    public String deleteIndex(Index index) {
-        return null;
-    }
-
-    @Override
     public boolean swapIndexAlias(Index fromIndex, Index toIndex, Alias alias) throws IOException {
         IndicesAliasesRequest.AliasActions removeIndex =
                 new IndicesAliasesRequest.AliasActions(IndicesAliasesRequest
@@ -102,7 +97,6 @@ public class IndexManager implements IIndexManager {
     @Override
     public boolean doesIndexExists(Index index) throws IOException {
         try {
-
             GetIndexRequest request = new GetIndexRequest(index.toString());
             return this.openSearchClient.indices().exists(request, RequestOptions.DEFAULT);
         } catch (IOException ex) {
@@ -113,8 +107,13 @@ public class IndexManager implements IIndexManager {
 
     @Override
     public boolean doesAliasExists(Alias alias) throws IOException {
-        GetAliasesRequest request = new GetAliasesRequest(alias.toString());
-        return this.openSearchClient.indices().existsAlias(request, RequestOptions.DEFAULT);
+        try {
+            GetAliasesRequest request = new GetAliasesRequest(alias.toString());
+            return this.openSearchClient.indices().existsAlias(request, RequestOptions.DEFAULT);
+        } catch (IOException ex) {
+            LOGGER.error(ex.getLocalizedMessage());
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -137,6 +136,4 @@ public class IndexManager implements IIndexManager {
         }
         return indices;
     }
-
-
 }

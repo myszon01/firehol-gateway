@@ -38,9 +38,10 @@ public class IngestService {
         this.ipAddressesInitialSetup();
     }
 
-    public boolean startIngestion(final Alias alias) throws IOException {
-        if (alias == Alias.IP_ADDRESS) this.ipAddressesIngestFromFirehol();
-        return false;
+    public int startIngestion(Alias alias) throws IOException {
+        if (Alias.IP_ADDRESS == alias) return this.ipAddressesIngestFromFirehol();
+
+        throw new IllegalArgumentException("Alias doesn't exists");
     }
 
     private void ipAddressesInitialSetup() throws IOException {
@@ -57,7 +58,7 @@ public class IngestService {
         }
     }
 
-    private void ipAddressesIngestFromFirehol() throws IOException {
+    private int ipAddressesIngestFromFirehol() throws IOException {
         Index toIndex = getIndexForWriting();
 
         Commit commit = githubApiClient.getCommits().get(0);
@@ -67,6 +68,7 @@ public class IngestService {
         Queue<Tree> queue = new LinkedList<>();
         queue.add(rootTree);
 
+        int docCount = 0;
         while (!queue.isEmpty()) {
             Tree node = queue.poll();
             if (node.getType() == TreeType.BLOB) {
@@ -74,6 +76,7 @@ public class IngestService {
                 List<IpAddress> ipAddresses = GitHubProcessingHelper.getIpAddressFromBlob(blob);
                 if (ipAddresses.isEmpty()) continue;
                 indexIngest.insertIPAddressesToIndex(ipAddresses, toIndex);
+                docCount += ipAddresses.size();
             } else {
                 node = githubApiClient.getTreeBySha(node.getSha());
                 queue.addAll(node.getTree().stream()
@@ -84,6 +87,8 @@ public class IngestService {
 
         Index fromIndex = toIndex == Index.IP_ADDRESS_V1 ? Index.IP_ADDRESS_V2 : Index.IP_ADDRESS_V1;
         this.indexManager.swapIndexAlias(fromIndex, toIndex, Alias.IP_ADDRESS);
+
+        return 0;
     }
 
     private Index getIndexForWriting() throws IOException {
