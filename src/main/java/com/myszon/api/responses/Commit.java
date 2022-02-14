@@ -5,7 +5,7 @@ import io.micronaut.core.annotation.Introspected;
 @Introspected
 public class Commit {
     private String sha;
-    private Tree tree;
+    private CommitHeader commit;
 
     public Commit() {}
 
@@ -17,11 +17,23 @@ public class Commit {
         this.sha = sha;
     }
 
-    public Tree getTree() {
-        return tree;
+    public CommitHeader getCommit() {
+        return commit;
     }
 
-    public void setTree(Tree tree) {
-        this.tree = tree;
+    public void setCommit(CommitHeader commit) {
+        this.commit = commit;
+    }
+
+    public static class CommitHeader {
+        private Tree tree;
+
+        public Tree getTree() {
+            return tree;
+        }
+
+        public void setTree(Tree tree) {
+            this.tree = tree;
+        }
     }
 }

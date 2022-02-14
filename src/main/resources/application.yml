@@ -2,8 +2,10 @@ micronaut:
   application:
     name: fireholGateway
 github:
-  organization: micronaut-projects
-  repo: micronaut-core
+  organization: firehol
+  repo: blocklist-ipsets
+  username: USERNAME
+  token: TOKEN
 elasticsearch:
   username: "admin"
   password: "admin"

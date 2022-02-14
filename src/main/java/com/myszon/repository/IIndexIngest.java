@@ -9,5 +9,5 @@ import java.util.concurrent.ExecutionException;
 
 public interface IIndexIngest {
 
-    public void insertIPAddressesToIndex(List<IpAddress> ipAddress, Index index);
+    public boolean insertIPAddressesToIndex(List<IpAddress> ipAddress, Index index) throws IOException;
 }

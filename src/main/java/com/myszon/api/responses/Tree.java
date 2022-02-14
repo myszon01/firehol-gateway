@@ -1,12 +1,17 @@
 package com.myszon.api.responses;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.micronaut.core.annotation.Introspected;
+
 import java.util.List;
 
+@Introspected
 public class Tree {
 
     private String sha;
     private TreeType type;
     private List<Tree> tree;
+    private String path;
 
     public String getSha() {
         return sha;
@@ -16,20 +21,12 @@ public class Tree {
         this.sha = sha;
     }
 
-    public List<Tree> getUrl() {
-        return tree;
-    }
-
-    public void setUrl(List<Tree> url) {
-        this.tree = url;
-    }
-
     public TreeType getType() {
         return type;
     }
 
-    public void setType(TreeType type) {
-        this.type = type;
+    public void setType(String type) {
+        this.type = TreeType.fromString(type);
     }
 
     public List<Tree> getTree() {
@@ -38,5 +35,13 @@ public class Tree {
 
     public void setTree(List<Tree> tree) {
         this.tree = tree;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 }

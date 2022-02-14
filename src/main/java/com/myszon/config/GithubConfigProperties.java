@@ -3,15 +3,17 @@ package com.myszon.config;
 import io.micronaut.context.annotation.ConfigurationProperties;
 import io.micronaut.context.annotation.Requires;
 
-@ConfigurationProperties(GithubProperties.PREFIX)
-@Requires(property = GithubProperties.PREFIX)
-public class GithubProperties {
+@ConfigurationProperties(GithubConfigProperties.PREFIX)
+@Requires(property = GithubConfigProperties.PREFIX)
+public class GithubConfigProperties {
 
     public static final String PREFIX = "github";
     public static final String GITHUB_API_URL = "https://api.github.com";
 
     private String organization;
     private String repo;
+    private String username;
+    private String token;
 
     public String getOrganization() {
         return organization;
@@ -27,5 +29,21 @@ public class GithubProperties {
 
     public void setRepo(String repo) {
         this.repo = repo;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 }
