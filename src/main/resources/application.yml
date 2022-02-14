@@ -7,8 +7,8 @@ micronaut:
 github:
   organization: firehol
   repo: blocklist-ipsets
-  username: myszon01
-  token: "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"
+  username: USERNAME
+  token: TOKEN
 elasticsearch:
   username: "admin"
   password: "admin"
