@@ -16,6 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 
 @Controller("/admin/v1")
 public class AdminController {
@@ -39,8 +41,12 @@ public class AdminController {
         }
 
         try {
-            return HttpResponse.ok(new IngestResponse(this.ingestService.startIngestion(aliasFromParam)));
-        } catch (IOException ex) {
+            Instant start = Instant.now();
+            int docCount = this.ingestService.startIngestion(aliasFromParam);
+            Instant finish = Instant.now();
+            long timeElapsed = Duration.between(start, finish).toMillis();
+            return HttpResponse.ok(new IngestResponse(docCount, Long.toString(timeElapsed)));
+        } catch (Exception ex) {
             LOGGER.error(ex.getLocalizedMessage());
             return HttpResponse.serverError().body(
                     new BaseResponse("Failure", ex.getMessage())

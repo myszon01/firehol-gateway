@@ -88,7 +88,7 @@ public class IngestService {
         Index fromIndex = toIndex == Index.IP_ADDRESS_V1 ? Index.IP_ADDRESS_V2 : Index.IP_ADDRESS_V1;
         this.indexManager.swapIndexAlias(fromIndex, toIndex, Alias.IP_ADDRESS);
 
-        return 0;
+        return docCount;
     }
 
     private Index getIndexForWriting() throws IOException {

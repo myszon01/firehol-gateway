@@ -27,6 +27,11 @@ public class GitHubProcessingHelper {
         for (String line : lines) {
             if (line.charAt(0) == '#') continue;
 
+            // TODO Handle subnet
+            if (line.contains("/")) {
+                throw new RuntimeException("found it !!!!!!!!!!!!!");
+            }
+
             IpAddress ip1 = new IpAddress();
             ip1.setIpAddress(line);
             list.add(ip1);

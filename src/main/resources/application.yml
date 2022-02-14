@@ -1,11 +1,14 @@
 micronaut:
   application:
     name: fireholGateway
+  http:
+    client:
+      max-content-length: 100000000
 github:
   organization: firehol
   repo: blocklist-ipsets
-  username: USERNAME
-  token: TOKEN
+  username: myszon01
+  token: "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"
 elasticsearch:
   username: "admin"
   password: "admin"

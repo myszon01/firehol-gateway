@@ -4,8 +4,8 @@ public class IngestResponse extends BaseResponse {
 
     private int docCount;
 
-    public IngestResponse(int docCount) {
-        super("Success", "");
+    public IngestResponse(int docCount, String msg) {
+        super("Success", msg);
         this.docCount = docCount;
     }
 

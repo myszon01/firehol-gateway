@@ -12,7 +12,7 @@ import org.opensearch.client.RequestOptions;
 import org.opensearch.client.RestHighLevelClient;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Singleton
@@ -31,7 +31,10 @@ public class IndexSearch implements IIndexSearch {
     public SearchResults<IpAddress> findIpAddressById(String ipAddress) throws IOException {
         GetRequest getRequest = new GetRequest(Alias.IP_ADDRESS.toString(), ipAddress);
         GetResponse response = this.openSearchClient.get(getRequest, RequestOptions.DEFAULT);
+        if(!response.isExists()) return new SearchResults.Builder<IpAddress>()
+                .documents(Collections.emptyList()).found(false).build();
         IpAddress ipAdd = mappers.readValue(response.getSourceAsString(), IpAddress.class);
-        return new SearchResults.Builder<IpAddress>().documents(List.of(ipAdd)).build();
+
+        return new SearchResults.Builder<IpAddress>().documents(List.of(ipAdd)).found(true).build();
     }
 }

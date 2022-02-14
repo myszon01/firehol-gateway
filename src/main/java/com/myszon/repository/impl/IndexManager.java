@@ -4,6 +4,7 @@ import com.myszon.model.Alias;
 import com.myszon.model.Index;
 import com.myszon.repository.IIndexManager;
 import jakarta.inject.Singleton;
+import org.opensearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.opensearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.opensearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.opensearch.action.support.master.AcknowledgedResponse;

@@ -2,6 +2,8 @@ package com.myszon.controller;
 
 import com.myszon.controller.projection.BaseResponse;
 import com.myszon.controller.projection.IpAddressResponse;
+import com.myszon.model.IpAddress;
+import com.myszon.model.SearchResults;
 import com.myszon.service.SearchService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Controller;
@@ -30,8 +32,12 @@ public class BlockListController {
         }
 
         try {
-            return HttpResponse.ok(new IpAddressResponse(
-                    searchService.findIpAddressById(ipAddress).getDocuments().get(0).getIpAddress()));
+            SearchResults<IpAddress> results = searchService.findIpAddressById(ipAddress);
+
+            if (!results.isFound()) {
+                return HttpResponse.notFound(new BaseResponse("Failure", "Not found"));
+            }
+            return HttpResponse.ok(new IpAddressResponse(results.getDocuments().get(0).getIpAddress()));
         } catch (IOException ex) {
             LOGGER.error(ex.getLocalizedMessage());
             return HttpResponse.serverError().body(
