@@ -7,6 +7,12 @@ public class IpAddress{
 
     private String ipAddress;
 
+    public IpAddress() {}
+
+    public IpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
     public String getIpAddress() {
         return ipAddress;
     }

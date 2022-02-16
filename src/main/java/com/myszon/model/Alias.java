@@ -1,7 +1,8 @@
 package com.myszon.model;
 
-import com.myszon.api.responses.TreeType;
+import io.micronaut.core.annotation.Introspected;
 
+@Introspected
 public enum Alias {
 
     IP_ADDRESS("ip_address");

@@ -1,28 +1,22 @@
 package com.myszon.repository.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.myszon.config.ElasticsearchProperties;
 import com.myszon.model.Index;
 import com.myszon.model.IpAddress;
 import com.myszon.repository.IIndexIngest;
 import jakarta.inject.Singleton;
-import org.opensearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.bulk.BulkResponse;
-import org.opensearch.action.get.GetRequest;
-import org.opensearch.action.get.GetResponse;
 import org.opensearch.action.index.IndexRequest;
-import org.opensearch.action.index.IndexResponse;
 import org.opensearch.client.RequestOptions;
 import org.opensearch.client.RestHighLevelClient;
-import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.index.search.SimpleQueryStringQueryParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
 
 @Singleton
@@ -32,10 +26,13 @@ public class IndexIngest implements IIndexIngest {
 
     private final RestHighLevelClient openSearchClient;
     private final ObjectMapper mapper;
+    private final int maxBatchSize;
 
-    public IndexIngest(RestHighLevelClient openSearchClient, ObjectMapper mapper) {
+    public IndexIngest(RestHighLevelClient openSearchClient, ObjectMapper mapper,
+                       ElasticsearchProperties elasticsearchProperties) {
         this.openSearchClient = openSearchClient;
         this.mapper = mapper;
+        this.maxBatchSize = elasticsearchProperties.getMaxBulkSize();
     }
 
     @Override
@@ -52,7 +49,7 @@ public class IndexIngest implements IIndexIngest {
             bulkRequest.add(indexRequest);
             bulkRequestSize++;
 
-            if (bulkRequestSize < 100000 && i + 1 < ipAddresses.size()) continue;
+            if (bulkRequestSize < maxBatchSize && i + 1 < ipAddresses.size()) continue;
 
             LOGGER.info(String.format("Start inserting %s ipAddresses to %s", bulkRequestSize, index));
             this.executeBulkRequest(bulkRequest);
@@ -65,10 +62,10 @@ public class IndexIngest implements IIndexIngest {
         return true;
     }
 
-    private boolean executeBulkRequest(BulkRequest bulkRequest) throws IOException {
+    private void executeBulkRequest(BulkRequest bulkRequest) throws IOException {
         try {
             BulkResponse response = this.openSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-            return response.status().getStatus() == 200;
+            response.status();
         } catch (IOException ex) {
             throw new IOException(ex);
         }

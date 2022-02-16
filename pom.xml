@@ -13,7 +13,6 @@
         <version>3.3.1</version>
     </parent>
 
-
     <properties>
         <packaging>jar</packaging>
         <jdk.version>11</jdk.version>
@@ -31,6 +30,7 @@
     </repositories>
 
     <dependencies>
+        <!--Micronout-->
         <dependency>
             <groupId>io.micronaut</groupId>
             <artifactId>micronaut-inject</artifactId>
@@ -48,46 +48,13 @@
         </dependency>
         <dependency>
             <groupId>io.micronaut.aws</groupId>
-            <artifactId>micronaut-function-aws-api-proxy-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.micronaut.aws</groupId>
             <artifactId>micronaut-function-aws-custom-runtime</artifactId>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>io.micronaut.reactor</groupId>
             <artifactId>micronaut-reactor</artifactId>
             <version>2.2.0</version>
-        </dependency>
-        <!-- TODO SWITCH TO OPEN SEARCH CLIENT  -->
-<!--        <dependency>-->
-<!--            <groupId>io.micronaut.elasticsearch</groupId>-->
-<!--            <artifactId>micronaut-elasticsearch</artifactId>-->
-<!--            <version>4.2.0</version>-->
-<!--        </dependency>-->
-        <dependency>
-            <groupId>org.opensearch.client</groupId>
-            <artifactId>opensearch-rest-high-level-client</artifactId>
-            <version>1.2.4</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.micronaut.test</groupId>
-            <artifactId>micronaut-test-junit5</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.micronaut</groupId>
@@ -104,6 +71,10 @@
             <artifactId>micronaut-runtime</artifactId>
             <scope>compile</scope>
         </dependency>
+        <!--Micronout-->
+
+
+
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
@@ -114,6 +85,40 @@
             <artifactId>logback-classic</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- TODO SWITCH TO OPEN SEARCH CLIENT  -->
+        <!--        <dependency>-->
+        <!--            <groupId>io.micronaut.elasticsearch</groupId>-->
+        <!--            <artifactId>micronaut-elasticsearch</artifactId>-->
+        <!--            <version>4.2.0</version>-->
+        <!--        </dependency>-->
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-rest-high-level-client</artifactId>
+            <version>1.2.4</version>
+        </dependency>
+
+        <!--TEST-->
+        <dependency>
+            <groupId>io.micronaut.aws</groupId>
+            <artifactId>micronaut-function-aws-api-proxy-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut.test</groupId>
+            <artifactId>micronaut-test-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!--TEST-->
     </dependencies>
 
     <profiles>

@@ -1,19 +1,30 @@
 package com.myszon.controller.projection;
 
-public class BaseResponse {
-    String status;
+public class BaseResponse<T> {
+    int status;
     String message;
+    T entity;
 
-    public BaseResponse(String status, String message) {
+    public BaseResponse(int status, String message, T entity) {
+        this.status = status;
+        this.message = message;
+        this.entity = entity;
+    }
+
+    public BaseResponse(int status, String message) {
         this.status = status;
         this.message = message;
     }
 
-    public String getStatus() {
+    public int getStatus() {
         return status;
     }
 
     public String getMessage() {
         return message;
+    }
+
+    public T getEntity() {
+        return entity;
     }
 }

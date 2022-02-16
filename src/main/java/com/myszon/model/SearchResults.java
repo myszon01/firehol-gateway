@@ -1,9 +1,10 @@
 package com.myszon.model;
 
-import com.myszon.service.SearchService;
+import io.micronaut.core.annotation.Introspected;
 
 import java.util.List;
 
+@Introspected
 public class SearchResults<TDocument> {
 
     private final List<TDocument> documents;

@@ -20,5 +20,7 @@ public interface IIndexManager {
 
     boolean doesAliasExists(Alias alias) throws IOException;
 
+    boolean recreateIndex(Index index) throws IOException;
+
     Set<Index> getIndexByAlias(Alias alias) throws IOException;
 }

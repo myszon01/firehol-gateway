@@ -1,5 +1,8 @@
 package com.myszon.api.responses;
 
+import io.micronaut.core.annotation.Introspected;
+
+@Introspected
 public class Blob {
     private String encoding;
     private String content;

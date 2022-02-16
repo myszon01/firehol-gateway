@@ -1,11 +1,10 @@
 package com.myszon.controller.projection;
 
-public class IpAddressResponse extends BaseResponse{
+public class IpAddressResponse {
 
-    private String ip;
+    private final String ip;
 
     public IpAddressResponse(String ip) {
-        super("Success", "");
         this.ip = ip;
     }
 

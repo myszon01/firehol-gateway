@@ -7,6 +7,7 @@ import jakarta.inject.Singleton;
 import org.opensearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.opensearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.opensearch.action.admin.indices.alias.get.GetAliasesRequest;
+import org.opensearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.client.RequestOptions;
 import org.opensearch.client.RestHighLevelClient;
@@ -111,6 +112,23 @@ public class IndexManager implements IIndexManager {
         try {
             GetAliasesRequest request = new GetAliasesRequest(alias.toString());
             return this.openSearchClient.indices().existsAlias(request, RequestOptions.DEFAULT);
+        } catch (IOException ex) {
+            LOGGER.error(ex.getLocalizedMessage());
+            throw new IOException(ex);
+        }
+    }
+
+    @Override
+    public boolean recreateIndex(Index index) throws IOException {
+        try {
+            DeleteIndexRequest request = new DeleteIndexRequest(index.toString());
+            boolean isDeleted = this.openSearchClient.indices()
+                    .delete(request, RequestOptions.DEFAULT).isAcknowledged();
+
+            if (!isDeleted) throw new IOException("Problem with deleting index");
+
+            return this.createIndex(index);
+
         } catch (IOException ex) {
             LOGGER.error(ex.getLocalizedMessage());
             throw new IOException(ex);

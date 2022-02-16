@@ -13,6 +13,7 @@ public class ElasticsearchProperties {
     private String username;
     private String password;
     private String baseUrl;
+    private Integer maxBulkSize;
 
     public String getUsername() {
         return username;
@@ -36,5 +37,13 @@ public class ElasticsearchProperties {
 
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    public Integer getMaxBulkSize() {
+        return maxBulkSize;
+    }
+
+    public void setMaxBulkSize(Integer maxBulkSize) {
+        this.maxBulkSize = maxBulkSize;
     }
 }

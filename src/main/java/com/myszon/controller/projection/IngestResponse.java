@@ -1,11 +1,10 @@
 package com.myszon.controller.projection;
 
-public class IngestResponse extends BaseResponse {
+public class IngestResponse {
 
     private int docCount;
 
-    public IngestResponse(int docCount, String msg) {
-        super("Success", msg);
+    public IngestResponse(int docCount) {
         this.docCount = docCount;
     }
 

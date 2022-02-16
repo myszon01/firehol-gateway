@@ -3,13 +3,16 @@ micronaut:
     name: fireholGateway
   http:
     client:
-      max-content-length: 100000000
+      max-content-length: 1000000000
+jackson:
+  bean-introspection-module: true
 github:
   organization: firehol
   repo: blocklist-ipsets
-  username: USERNAME
-  token: TOKEN
+  username: username
+  token: token
 elasticsearch:
   username: "admin"
   password: "admin"
   baseUrl: https://localhost:9200
+  maxBulkSize: 100000
