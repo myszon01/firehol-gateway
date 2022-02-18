@@ -5,6 +5,7 @@ import io.micronaut.core.annotation.Introspected;
 @Introspected
 public enum Alias {
 
+    IP_ADDRESS_RANGE("ip_address_range"),
     IP_ADDRESS("ip_address");
 
     private final String text;

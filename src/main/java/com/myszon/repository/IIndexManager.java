@@ -6,11 +6,12 @@ import org.opensearch.client.GetAliasesResponse;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface IIndexManager {
 
-    boolean createIndex(Index name) throws IOException;
+    boolean createIndex(Index name, Map<String, Object> mapping) throws IOException;
 
     boolean swapIndexAlias(Index fromIndex, Index toIndex, Alias alias) throws IOException;
 
@@ -20,7 +21,7 @@ public interface IIndexManager {
 
     boolean doesAliasExists(Alias alias) throws IOException;
 
-    boolean recreateIndex(Index index) throws IOException;
+    boolean recreateIndex(Index index, Map<String, Object> mapping) throws IOException;
 
-    Set<Index> getIndexByAlias(Alias alias) throws IOException;
+    List<Index> getIndexByAlias(Alias alias) throws IOException;
 }

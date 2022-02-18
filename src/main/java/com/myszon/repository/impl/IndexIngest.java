@@ -51,23 +51,14 @@ public class IndexIngest implements IIndexIngest {
 
             if (bulkRequestSize < maxBatchSize && i + 1 < ipAddresses.size()) continue;
 
-            LOGGER.info(String.format("Start inserting %s ipAddresses to %s", bulkRequestSize, index));
-            this.executeBulkRequest(bulkRequest);
-            LOGGER.info("Index insertion successful");
+            LOGGER.debug(String.format("Start inserting %s ipAddresses to %s", bulkRequestSize, index));
+            this.openSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+            LOGGER.debug("Index insertion successful");
 
             bulkRequestSize = 0;
             bulkRequest = new BulkRequest(index.toString());
         }
 
         return true;
-    }
-
-    private void executeBulkRequest(BulkRequest bulkRequest) throws IOException {
-        try {
-            BulkResponse response = this.openSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-            response.status();
-        } catch (IOException ex) {
-            throw new IOException(ex);
-        }
     }
 }

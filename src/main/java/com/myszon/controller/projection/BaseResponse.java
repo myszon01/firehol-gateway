@@ -1,5 +1,8 @@
 package com.myszon.controller.projection;
 
+import io.micronaut.core.annotation.Introspected;
+
+@Introspected
 public class BaseResponse<T> {
     int status;
     String message;

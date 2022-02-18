@@ -24,16 +24,4 @@ public class Commit {
     public void setCommit(CommitHeader commit) {
         this.commit = commit;
     }
-
-    public static class CommitHeader {
-        private Tree tree;
-
-        public Tree getTree() {
-            return tree;
-        }
-
-        public void setTree(Tree tree) {
-            this.tree = tree;
-        }
-    }
 }

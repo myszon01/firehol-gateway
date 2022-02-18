@@ -43,6 +43,7 @@ public class SearchResults<TDocument> {
         }
 
         public SearchResults<TDocument> build() {
+            found = documents.size() > 0;
             return new SearchResults<TDocument>(this);
         }
     }

@@ -1,5 +1,8 @@
 package com.myszon.controller.projection;
 
+import io.micronaut.core.annotation.Introspected;
+
+@Introspected
 public class IngestResponse {
 
     private int docCount;

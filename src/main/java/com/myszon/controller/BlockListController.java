@@ -35,7 +35,7 @@ public class BlockListController {
                         new BaseResponse<>(HttpStatus.NOT_FOUND.getCode(), "Ip address not found"));
             }
             return HttpResponse.ok(new BaseResponse<>(HttpStatus.OK.getCode(),"",
-                    new IpAddressResponse(results.getDocuments().get(0).getIpAddress())));
+                    results.getDocuments().stream().map(ipA -> new IpAddressResponse(ipA.getIpAddress()))));
         } catch (Exception ex) {
             ex.printStackTrace();
             return HttpResponse.serverError().body(

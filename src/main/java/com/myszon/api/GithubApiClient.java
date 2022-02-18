@@ -5,6 +5,7 @@ import com.myszon.api.responses.Blob;
 import com.myszon.api.responses.Commit;
 import com.myszon.api.responses.Tree;
 import com.myszon.config.GithubConfigProperties;
+import io.micronaut.context.annotation.Prototype;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Header;
 import io.micronaut.http.client.annotation.Client;
@@ -19,18 +20,15 @@ import static io.micronaut.http.HttpHeaders.USER_AGENT;
 @Client(GithubConfigProperties.GITHUB_API_URL)
 @Header(name = USER_AGENT, value = "Micronaut HTTP Client")
 @Header(name = ACCEPT, value = "application/vnd.github.v3+json, application/json")
-@Retryable(delay = "3s")
+@Retryable(delay = "3s", attempts = "5")
 public interface GithubApiClient {
 
     @Get("/repos/${github.organization}/${github.repo}/commits")
     List<Commit> getCommits();
 
-    @Get("/repos/${github.organization}/${github.repo}/git/commits/{sha}")
-    Mono<Commit> getCommitBySha(String sha);
-
     @Get("/repos/${github.organization}/${github.repo}/git/trees/{sha}")
     Tree getTreeBySha(String sha);
 
     @Get("/repos/${github.organization}/${github.repo}/git/blobs/{sha}")
-    Blob getBlobBySha(String sha);
+    Mono<Blob> getBlobBySha(String sha);
 }

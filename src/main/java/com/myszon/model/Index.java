@@ -6,7 +6,10 @@ import io.micronaut.core.annotation.Introspected;
 public enum Index {
 
     IP_ADDRESS_V1("ip_address_v1"),
-    IP_ADDRESS_V2("ip_address_v2");
+    IP_ADDRESS_RANGE_V1("ip_address_range_v1"),
+
+    IP_ADDRESS_V2("ip_address_v2"),
+    IP_ADDRESS_RANGE_V2("ip_address_range_v2");
 
     private final String text;
 

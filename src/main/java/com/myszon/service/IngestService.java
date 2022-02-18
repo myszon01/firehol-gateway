@@ -1,14 +1,14 @@
 package com.myszon.service;
 
 import com.myszon.model.Alias;
-import com.myszon.processor.IpAddressProcessor;
+import com.myszon.processor.manager.IpAddressManager;
 import jakarta.inject.Singleton;
 
 @Singleton
 public class IngestService {
-    private final IpAddressProcessor ipAddressIndexProcessor;
+    private final IpAddressManager ipAddressIndexProcessor;
 
-    public IngestService(IpAddressProcessor ipAddressIndexProcessor) {
+    public IngestService(IpAddressManager ipAddressIndexProcessor) {
         this.ipAddressIndexProcessor = ipAddressIndexProcessor;
     }
 

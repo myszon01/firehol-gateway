@@ -35,13 +35,14 @@ public class IndexManager implements IIndexManager {
 
 
     @Override
-    public boolean createIndex(Index index) throws IOException {
+    public boolean createIndex(Index index, Map<String, Object> mapping) throws IOException {
         CreateIndexRequest createIndexRequest = new CreateIndexRequest(index.toString());
 
         createIndexRequest.settings(Settings.builder()
                 .put("index.number_of_shards", 1)
                 .put("index.number_of_replicas", 2)
-        );
+        ).mapping(mapping);
+
         CreateIndexResponse createIndexResponse = this.openSearchClient.indices()
                 .create(createIndexRequest, RequestOptions.DEFAULT);
         return createIndexResponse.isAcknowledged();
@@ -119,7 +120,7 @@ public class IndexManager implements IIndexManager {
     }
 
     @Override
-    public boolean recreateIndex(Index index) throws IOException {
+    public boolean recreateIndex(Index index, Map<String, Object> mapping) throws IOException {
         try {
             DeleteIndexRequest request = new DeleteIndexRequest(index.toString());
             boolean isDeleted = this.openSearchClient.indices()
@@ -127,7 +128,7 @@ public class IndexManager implements IIndexManager {
 
             if (!isDeleted) throw new IOException("Problem with deleting index");
 
-            return this.createIndex(index);
+            return this.createIndex(index, mapping);
 
         } catch (IOException ex) {
             LOGGER.error(ex.getLocalizedMessage());
@@ -136,7 +137,7 @@ public class IndexManager implements IIndexManager {
     }
 
     @Override
-    public Set<Index> getIndexByAlias(Alias alias) throws IOException {
+    public List<Index> getIndexByAlias(Alias alias) throws IOException {
         GetAliasesRequest request = new GetAliasesRequest(alias.toString());
         Map<String, Set<AliasMetadata>> metadataSet;
 
@@ -149,7 +150,7 @@ public class IndexManager implements IIndexManager {
             throw new IOException(ex);
         }
 
-        Set<Index> indices = new HashSet<>();
+        List<Index> indices = new ArrayList<>();
         for (String key : metadataSet.keySet()) {
             indices.add(Index.fromString(key));
         }
