@@ -1,22 +1,15 @@
 package com.myszon.controller.projection;
 
 import io.micronaut.core.annotation.Introspected;
+import lombok.Builder;
+import lombok.Getter;
 
-@Introspected
+@Introspected @Getter @Builder
 public class IngestResponse {
 
-    private int docCount;
+    private int processedFiles;
+    private int failedFiles;
+    private long insertedIpAddressesAndRange;
+    private int totalFiles;
 
-    public IngestResponse(int docCount) {
-        this.docCount = docCount;
-    }
-
-
-    public int getDocCount() {
-        return docCount;
-    }
-
-    public void setDocCount(int docCount) {
-        this.docCount = docCount;
-    }
 }

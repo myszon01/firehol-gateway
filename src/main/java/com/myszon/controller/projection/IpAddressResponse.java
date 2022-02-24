@@ -1,17 +1,12 @@
 package com.myszon.controller.projection;
 
 import io.micronaut.core.annotation.Introspected;
+import lombok.Builder;
+import lombok.Getter;
 
-@Introspected
+@Introspected @Getter @Builder
 public class IpAddressResponse {
 
     private final String ip;
-
-    public IpAddressResponse(String ip) {
-        this.ip = ip;
-    }
-
-    public String getIp() {
-        return ip;
-    }
+    private final String path;
 }

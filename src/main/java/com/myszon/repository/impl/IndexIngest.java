@@ -44,12 +44,13 @@ public class IndexIngest implements IIndexIngest {
             IpAddress ipAddress = ipAddresses.get(i);
             IndexRequest indexRequest = new IndexRequest();
             indexRequest.id(ipAddress.getIpAddress());
+            indexRequest.index(index.toString());
             indexRequest.source(mapper.writeValueAsString(ipAddress)
                     .getBytes(StandardCharsets.UTF_8), XContentType.JSON);
             bulkRequest.add(indexRequest);
             bulkRequestSize++;
 
-            if (bulkRequestSize < maxBatchSize && i + 1 < ipAddresses.size()) continue;
+            if (bulkRequestSize < this.maxBatchSize && i + 1 < ipAddresses.size()) continue;
 
             LOGGER.debug(String.format("Start inserting %s ipAddresses to %s", bulkRequestSize, index));
             this.openSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);

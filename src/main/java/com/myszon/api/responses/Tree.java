@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.micronaut.core.annotation.Introspected;
 
 import java.util.List;
+import java.util.Objects;
 
 @Introspected
 public class Tree {
@@ -43,5 +44,20 @@ public class Tree {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Tree tree = (Tree) o;
+
+        return Objects.equals(sha, tree.sha);
+    }
+
+    @Override
+    public int hashCode() {
+        return sha != null ? sha.hashCode() : 0;
     }
 }

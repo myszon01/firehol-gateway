@@ -4,22 +4,28 @@ micronaut:
   http:
     client:
       max-content-length: 1000000000
-      read-timeout: "10s"
-  executors:
-    cached:
-      type: cached
-      core-pool-size: 100
+      read-timeout: "1200s"
+      ssl:
+        handshake-timeout: "20s"
 jackson:
   bean-introspection-module: true
 github:
   organization: firehol
   repo: blocklist-ipsets
   username: USERNAME
-  token: TOKEN
+  token: "TOKEN"
 elasticsearch:
   username: "admin"
-  password: "admin"
+  password: "Myszk@12"
   base-url: https://search-test-muet76wy3yw4rwkt5p5o7lnype.us-east-2.es.amazonaws.com
   max-bulk-size: 50000
 #  baseUrl: https://localhost:9200
 #  maxBulkSize: 1000
+tracing:
+  zipkin:
+    http:
+      url: http://zipkin2-env.eba-vk3mgau4.us-east-2.elasticbeanstalk.com
+    enabled: true
+    sampler:
+      probability: 1
+    local-service-name: "fireholGateway"

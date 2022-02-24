@@ -30,19 +30,27 @@ public class AdminController {
         } catch (IllegalArgumentException ex) {
 
             return HttpResponse.notFound().body(
-                    new BaseResponse<>(HttpStatus.NOT_FOUND.getCode(), "Alias does not exists")
-            );
+                    BaseResponse.builder()
+                            .status(HttpStatus.NOT_FOUND.getCode())
+                            .message("Alias does not exists")
+                            .build());
         }
 
         try {
-            int docCount = this.ingestService.startIngestion(aliasFromParam);
+            IngestResponse response = this.ingestService.startIngestion(aliasFromParam);
             return HttpResponse.ok(
-                    new BaseResponse<>(HttpStatus.OK.getCode(), "",new IngestResponse(docCount)));
+                    BaseResponse.builder()
+                            .status(HttpStatus.OK.getCode())
+                            .message("success")
+                            .entity(response)
+                            .build());
         } catch (Exception ex) {
             ex.printStackTrace();
             return HttpResponse.serverError().body(
-                    new BaseResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.getCode(), ex.getMessage())
-            );
+                    BaseResponse.builder()
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR.getCode())
+                            .message(ex.getMessage())
+                            .build());
         }
     }
 }

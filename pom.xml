@@ -18,8 +18,8 @@
         <jdk.version>11</jdk.version>
         <release.version>11</release.version>
         <micronaut.version>3.3.1</micronaut.version>
-        <exec.mainClass>io.micronaut.function.aws.runtime.MicronautLambdaRuntime</exec.mainClass>
-        <micronaut.runtime>lambda</micronaut.runtime>
+        <exec.mainClass>com.myszon.Application</exec.mainClass>
+        <micronaut.runtime>netty</micronaut.runtime>
     </properties>
 
     <repositories>
@@ -71,14 +71,30 @@
             <artifactId>micronaut-runtime</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-management</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-http-server-netty</artifactId>
+            <scope>compile</scope>
+        </dependency>
         <!--Micronout-->
 
-
+        <!--TRACING-->
+        <dependency>
+            <groupId>io.micronaut.tracing</groupId>
+            <artifactId>micronaut-tracing-zipkin</artifactId>
+        </dependency>
+        <!--TRACING-->
 
         <dependency>
-            <groupId>com.github.seancfoley</groupId>
-            <artifactId>ipaddress</artifactId>
-            <version>5.3.3</version>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.22</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>
@@ -126,23 +142,6 @@
         <!--TEST-->
     </dependencies>
 
-    <profiles>
-        <profile>
-            <id>local</id>
-            <properties>
-                <exec.mainClass>com.myszon.Application</exec.mainClass>
-                <micronaut.runtime>netty</micronaut.runtime>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>io.micronaut</groupId>
-                    <artifactId>micronaut-http-server-netty</artifactId>
-                    <scope>compile</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
-
     <build>
         <plugins>
             <plugin>
@@ -157,7 +156,18 @@
                     <!-- Uncomment to enable incremental compilation -->
                     <!-- <useIncrementalCompilation>false</useIncrementalCompilation> -->
 
-                    <annotationProcessorPaths combine.children="append">
+                    <annotationProcessorPaths combine.self="override">
+                        <path>
+                            <!-- must precede micronaut-inject-java -->
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.22</version>
+                        </path>
+                        <path>
+                            <groupId>io.micronaut</groupId>
+                            <artifactId>micronaut-inject-java</artifactId>
+                            <version>${micronaut.version}</version>
+                        </path>
                         <path>
                             <groupId>io.micronaut</groupId>
                             <artifactId>micronaut-http-validation</artifactId>

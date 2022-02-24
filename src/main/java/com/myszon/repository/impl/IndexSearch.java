@@ -45,7 +45,7 @@ public class IndexSearch implements IIndexSearch {
         }
      */
     @Override
-    public SearchResults<IpAddress> findIpAddressById(String ipAddress) throws IOException {
+    public List<IpAddress> findIpAddressById(String ipAddress) throws IOException {
 
         QueryBuilder queryBuilder = new TermQueryBuilder("ipAddress", ipAddress);
         SearchSourceBuilder builder = new SearchSourceBuilder().query(queryBuilder);
@@ -65,6 +65,6 @@ public class IndexSearch implements IIndexSearch {
             ipAddresses.add(new IpAddress(ip, path, sha));
         }
 
-        return new SearchResults.Builder<IpAddress>().documents(ipAddresses).build();
+        return ipAddresses;
     }
 }

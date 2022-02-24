@@ -2,15 +2,16 @@ package com.myszon.controller;
 
 import com.myszon.controller.projection.BaseResponse;
 import com.myszon.controller.projection.IpAddressResponse;
-import com.myszon.model.IpAddress;
-import com.myszon.model.SearchResults;
 import com.myszon.service.SearchService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 
-@Controller("/v1/blocklist")
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Controller("/blocklist/v1")
 public class BlockListController {
 
     private final SearchService searchService;
@@ -24,23 +25,34 @@ public class BlockListController {
 
         if(!isValidIpAddress(ipAddress)) {
             return HttpResponse.badRequest(
-                    new BaseResponse<>(HttpStatus.BAD_REQUEST.getCode(), "Wrong IP address format"));
+                    BaseResponse.builder()
+                            .status(HttpStatus.BAD_REQUEST.getCode())
+                            .message("Wrong IP address format")
+                            .build());
         }
 
         try {
-            SearchResults<IpAddress> results = searchService.findIpAddressById(ipAddress);
+            List<IpAddressResponse> results = searchService.findIpAddressById(ipAddress)
+                    .stream().map(ip -> IpAddressResponse.builder()
+                            .ip(ip.getIpAddress())
+                            .path(ip.getPath())
+                            .build())
+                    .collect(Collectors.toList());
 
-            if (!results.isFound()) {
-                return HttpResponse.notFound(
-                        new BaseResponse<>(HttpStatus.NOT_FOUND.getCode(), "Ip address not found"));
-            }
-            return HttpResponse.ok(new BaseResponse<>(HttpStatus.OK.getCode(),"",
-                    results.getDocuments().stream().map(ipA -> new IpAddressResponse(ipA.getIpAddress()))));
+            return HttpResponse.ok(
+                    BaseResponse.builder()
+                            .status(HttpStatus.OK.getCode())
+                            .message("success")
+                            .entity(results)
+                            .build());
+
         } catch (Exception ex) {
             ex.printStackTrace();
             return HttpResponse.serverError().body(
-                    new BaseResponse<>(HttpStatus.NOT_FOUND.getCode(), ex.getMessage())
-            );
+                    BaseResponse.builder()
+                            .status(HttpStatus.NOT_FOUND.getCode())
+                            .message(ex.getMessage())
+                            .build());
         }
     }
 

@@ -1,33 +1,12 @@
 package com.myszon.controller.projection;
 
 import io.micronaut.core.annotation.Introspected;
+import lombok.Builder;
+import lombok.Getter;
 
-@Introspected
+@Introspected @Getter @Builder
 public class BaseResponse<T> {
     int status;
     String message;
     T entity;
-
-    public BaseResponse(int status, String message, T entity) {
-        this.status = status;
-        this.message = message;
-        this.entity = entity;
-    }
-
-    public BaseResponse(int status, String message) {
-        this.status = status;
-        this.message = message;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public T getEntity() {
-        return entity;
-    }
 }

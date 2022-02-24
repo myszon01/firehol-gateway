@@ -6,6 +6,7 @@ import com.myszon.repository.IIndexSearch;
 import jakarta.inject.Singleton;
 
 import java.io.IOException;
+import java.util.List;
 
 @Singleton
 public class SearchService {
@@ -16,7 +17,7 @@ public class SearchService {
         this.indexSearch = indexSearch;
     }
 
-    public SearchResults<IpAddress> findIpAddressById(String id) throws IOException {
+    public List<IpAddress> findIpAddressById(String id) throws IOException {
         return indexSearch.findIpAddressById(id);
     }
 }

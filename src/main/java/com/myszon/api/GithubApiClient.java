@@ -5,11 +5,9 @@ import com.myszon.api.responses.Blob;
 import com.myszon.api.responses.Commit;
 import com.myszon.api.responses.Tree;
 import com.myszon.config.GithubConfigProperties;
-import io.micronaut.context.annotation.Prototype;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Header;
 import io.micronaut.http.client.annotation.Client;
-import io.micronaut.retry.annotation.Retryable;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -18,9 +16,8 @@ import static io.micronaut.http.HttpHeaders.ACCEPT;
 import static io.micronaut.http.HttpHeaders.USER_AGENT;
 
 @Client(GithubConfigProperties.GITHUB_API_URL)
-@Header(name = USER_AGENT, value = "Micronaut HTTP Client")
+@Header(name = USER_AGENT, value = "Micronaut HTTP Client v1")
 @Header(name = ACCEPT, value = "application/vnd.github.v3+json, application/json")
-@Retryable(delay = "3s", attempts = "5")
 public interface GithubApiClient {
 
     @Get("/repos/${github.organization}/${github.repo}/commits")
