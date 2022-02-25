@@ -32,7 +32,7 @@ public class AdminController {
             return HttpResponse.notFound().body(
                     BaseResponse.builder()
                             .status(HttpStatus.NOT_FOUND.getCode())
-                            .message("Alias does not exists")
+                            .error("Alias does not exists")
                             .build());
         }
 
@@ -41,7 +41,6 @@ public class AdminController {
             return HttpResponse.ok(
                     BaseResponse.builder()
                             .status(HttpStatus.OK.getCode())
-                            .message("success")
                             .entity(response)
                             .build());
         } catch (Exception ex) {
@@ -49,7 +48,7 @@ public class AdminController {
             return HttpResponse.serverError().body(
                     BaseResponse.builder()
                             .status(HttpStatus.INTERNAL_SERVER_ERROR.getCode())
-                            .message(ex.getMessage())
+                            .error(ex.getMessage())
                             .build());
         }
     }

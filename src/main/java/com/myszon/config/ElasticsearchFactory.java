@@ -52,5 +52,4 @@ public class ElasticsearchFactory {
 
         return new RestHighLevelClient(builder);
     }
-
 }

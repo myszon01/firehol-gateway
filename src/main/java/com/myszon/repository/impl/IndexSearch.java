@@ -62,7 +62,11 @@ public class IndexSearch implements IIndexSearch {
             String path = (String) values.get("path");
             String sha = (String) values.get("sha");
 
-            ipAddresses.add(new IpAddress(ip, path, sha));
+            ipAddresses.add(IpAddress.builder()
+                    .ipAddress(ip)
+                    .path(path)
+                    .sha(sha)
+                    .build());
         }
 
         return ipAddresses;

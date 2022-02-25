@@ -1,7 +1,6 @@
 package com.myszon.service;
 
 import com.myszon.model.IpAddress;
-import com.myszon.model.SearchResults;
 import com.myszon.repository.IIndexSearch;
 import jakarta.inject.Singleton;
 

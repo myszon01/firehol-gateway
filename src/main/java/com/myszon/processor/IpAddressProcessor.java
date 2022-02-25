@@ -10,10 +10,10 @@ import com.myszon.controller.projection.IngestResponse;
 import com.myszon.model.Alias;
 import com.myszon.model.Index;
 import com.myszon.model.IpAddress;
-import com.myszon.processor.queue.DLQ;
 import com.myszon.repository.IIndexIngest;
 import com.myszon.repository.IIndexManager;
 import com.myszon.util.IpAddressProcessorHelper;
+import com.myszon.util.QueueWrapper;
 import io.micronaut.context.annotation.Requires;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
@@ -24,9 +24,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -43,13 +41,16 @@ public class IpAddressProcessor implements IndexProcessor {
     private final IIndexManager indexManager;
     private final GithubApiClient githubApiClient;
     private final IIndexIngest indexIngest;
+    private final QueueWrapper queueWrapper;
 
     public IpAddressProcessor(IIndexManager indexManager,
                               IIndexIngest indexIngest,
-                              GithubApiClient githubApiClient) {
+                              GithubApiClient githubApiClient,
+                              QueueWrapper queueWrapper) {
         this.indexManager = indexManager;
         this.githubApiClient = githubApiClient;
         this.indexIngest = indexIngest;
+        this.queueWrapper = queueWrapper;
     }
 
     @PostConstruct
@@ -74,22 +75,127 @@ public class IpAddressProcessor implements IndexProcessor {
         Index fromIpAddressRangeIndex = fromAndToIpAddressRangeIndex[0];
         Index toNewIpAddressRangeIndex = fromAndToIpAddressRangeIndex[1];
 
-        LOGGER.info(String.format("Start Refreshing Index %s for Alias %s ",
-                toNewIpAddressIndex, Alias.IP_ADDRESS));
-        LOGGER.info(String.format("Start Refreshing Index %s for Alias %s ",
-                toNewIpAddressRangeIndex, Alias.IP_ADDRESS_RANGE));
+        LOGGER.info(String.format("Recreating index %s and %s", toNewIpAddressIndex, toNewIpAddressRangeIndex));
+        this.indexManager.recreateIndex(toNewIpAddressIndex, this.getIPAddressMapping());
+        this.indexManager.recreateIndex(toNewIpAddressRangeIndex, this.getIPAddressRangeMapping());
 
+        LOGGER.info("Transform github tree structure to flat list");
+        Set<Tree> flatten = this.gitHubRepoToFlatSet();
+
+        LOGGER.info(String.format("Start processing each blob from github. Current nr of blobs %s", flatten.size()));
+        AtomicInteger processedFilesCounter = new AtomicInteger(0);
+        AtomicInteger failedFilesCounter = new AtomicInteger(0);
+        AtomicLong insertedIpAddressesAndRange = new AtomicLong(0);
+        Flux.fromIterable(flatten)
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(node -> Mono.defer(() -> this.githubApiClient.getBlobBySha(node.getSha()))
+                        // TODO refactor to continue only on connection errors. Change loggers to debug
+                        .retryWhen(
+                                Retry.backoff(6, Duration.ofMillis(1000))
+                                        .doAfterRetry(retrySignal -> LOGGER.info("Retried "
+                                                + retrySignal.totalRetries()))
+
+                                        .onRetryExhaustedThrow((retryBackoffSpec, retrySignal)
+                                                -> retrySignal.failure()))
+                        .onErrorResume(Exception.class, (msg) -> {
+                            // TODO Send msg to SNS -> SQS
+                            queueWrapper.put(node);
+                            LOGGER.debug(String.format("Error when processing doc. Total failed docs %s ",
+                                    failedFilesCounter.incrementAndGet()));
+                            msg.printStackTrace();
+                            return Mono.empty();
+
+                        }).flatMap(blob -> processBlob(blob, node.getPath(), toNewIpAddressIndex,
+                                toNewIpAddressRangeIndex)
+                                .onErrorResume(throwable -> {
+                                    // TODO Send msg to SNS -> SQS
+                                    queueWrapper.put(node);
+                                    return Mono.empty();
+                                }))
+                        .flatMap(ipCount ->
+                        {
+                            Integer curFileCount = processedFilesCounter.incrementAndGet();
+                            LOGGER.debug(String.format("Blob processed. Current processed doc count " +
+                                            "is %s and inserted ips %s ", curFileCount,
+                                    insertedIpAddressesAndRange.addAndGet(ipCount)));
+                            return Mono.just(curFileCount);
+                        })
+                ).blockLast();
+
+        LOGGER.info("Swapping old indexes to new");
+        this.indexManager.swapIndexAlias(fromIpAddressIndex, toNewIpAddressIndex, Alias.IP_ADDRESS);
+        this.indexManager.swapIndexAlias(fromIpAddressRangeIndex, toNewIpAddressRangeIndex, Alias.IP_ADDRESS_RANGE);
+
+        LOGGER.info(String.format("Indices %s %s are fresh and switched to aliases %s %s",
+                toNewIpAddressIndex, toNewIpAddressRangeIndex, Alias.IP_ADDRESS, Alias.IP_ADDRESS_RANGE));
+
+        return IngestResponse.builder()
+                .processedFiles(processedFilesCounter.get())
+                .insertedIpAddressesAndRange(insertedIpAddressesAndRange.get())
+                .failedFiles(failedFilesCounter.get())
+                .totalFiles(flatten.size())
+                .build();
+    }
+
+    private Mono<Integer> processBlob(Blob blob, String path, Index ipAddress, Index ipAddressRange) {
+
+        LOGGER.debug(String.format("Processing blob with %s ", path));
+        Mono<Integer> ipRangeCount = Mono.just(blob.getContent())
+                .map(content -> Base64.getMimeDecoder().decode(content))
+                .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
+                .flatMapMany(page -> Flux.fromArray(page.trim().split("\n")))
+                .filter(line -> line.charAt(0) != '#')
+                .map(IpAddressProcessorHelper::getIpAddressAndOrMask)
+                .filter(ipAddressAndOrMask -> isValidMask(ipAddressAndOrMask[1]))
+                .map(ipRange -> IpAddress.builder()
+                        .ipAddress(ipRange[0] + "/" + ipRange[1])
+                        .path(path)
+                        .sha(blob.getSha())
+                        .build())
+                .collectList()
+                .flatMap(ipRange -> {
+                    try {
+                        this.indexIngest.insertIPAddressesToIndex(ipRange, ipAddressRange);
+                        return Mono.just(ipRange.size());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return Mono.error(e);
+                    }
+                });
+
+        Mono<Integer> ipAddressesCount = Mono.just(blob.getContent())
+                .map(content -> Base64.getMimeDecoder().decode(content))
+                .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
+                .flatMapMany(page -> Flux.fromArray(page.trim().split("\n")))
+                .filter(line -> line.charAt(0) != '#')
+                .map(IpAddressProcessorHelper::getIpAddressAndOrMask)
+                .filter(ipAddressAndOrMask -> !isValidMask(ipAddressAndOrMask[1]))
+                .map(ipRange -> IpAddress.builder()
+                        .ipAddress(ipRange[0])
+                        .path(path)
+                        .sha(blob.getSha())
+                        .build())
+                .collectList()
+                .flatMap(ipAdd -> {
+                    try {
+                        this.indexIngest.insertIPAddressesToIndex(ipAdd, ipAddress);
+                        return Mono.just(ipAdd.size());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return Mono.error(e);
+                    }
+                });
+
+        return Mono.zip(ipRangeCount, ipAddressesCount)
+                .doOnNext(objects -> LOGGER.debug("Done executing processBlob function and saved to elastic"))
+                .map(tuple -> tuple.getT1() + tuple.getT2());
+    }
+
+    private Set<Tree> gitHubRepoToFlatSet() {
         Commit commit = githubApiClient.getCommits().get(0);
         Tree rootTree = githubApiClient.getTreeBySha(commit.getCommit().getTree().getSha());
         rootTree.setType(TreeType.TREE.toString());
 
-        LOGGER.info(String.format("Recreating index %s ", toNewIpAddressIndex));
-        this.indexManager.recreateIndex(toNewIpAddressIndex, this.getIPAddressMapping());
-
-        LOGGER.info(String.format("Recreating index %s ", toNewIpAddressRangeIndex));
-        this.indexManager.recreateIndex(toNewIpAddressRangeIndex, this.getIPAddressRangeMapping());
-
-        LOGGER.info("Transform github tree structure to flat list");
         Set<Tree> flatten = new HashSet<>();
         Queue<Tree> pageQueue = new LinkedList<>();
         pageQueue.add(rootTree);
@@ -111,92 +217,7 @@ public class IpAddressProcessor implements IndexProcessor {
                         .collect(Collectors.toList()));
             }
         }
-
-        LOGGER.info(String.format("Start processing each blob from github. Current nr of blobs %s", flatten.size()));
-
-        AtomicInteger processedFilesCounter = new AtomicInteger(0);
-        AtomicInteger failedFilesCounter = new AtomicInteger(0);
-        AtomicLong insertedIpAddressesAndRange = new AtomicLong(0);
-
-        Blob subscribe = Flux.fromIterable(flatten)
-                .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(node -> Mono.defer(() -> this.githubApiClient.getBlobBySha(node.getSha()))
-                        // TODO refactor to continue only on connection errors. Change loggers to debug
-                        .retryWhen(
-                                Retry.backoff(10, Duration.ofMillis(10000))
-                                        .doAfterRetry(retrySignal -> LOGGER.info("Retried " + retrySignal.totalRetries()))
-                                        .onRetryExhaustedThrow((retryBackoffSpec, retrySignal)
-                                                -> retrySignal.failure()))
-                        .onErrorResume(Exception.class, (msg) -> {
-                            // TODO refactor to be in shared queue no static
-                            DLQ.addTree(new DLQ.DLQ_MESSAGE(node, toNewIpAddressIndex, toNewIpAddressRangeIndex));
-                            LOGGER.info(String.format("Error when processing doc. Total failed docs %s ",
-                                    failedFilesCounter.incrementAndGet()));
-                            msg.printStackTrace();
-                            return Mono.empty();
-                        })
-                        .flatMap(blob -> {
-                            try {
-                                long ips = processBlob(blob, node.getPath(), toNewIpAddressIndex,
-                                        toNewIpAddressRangeIndex);
-                                LOGGER.info(String.format("Blob processed. Current processed doc count " +
-                                                "is %s and inserted ips %s ", processedFilesCounter.incrementAndGet(),
-                                        insertedIpAddressesAndRange.addAndGet(ips)));
-                                return Mono.just(blob);
-                            } catch (Exception e) {
-                                // TODO refactor to be in shared queue no static
-                                DLQ.addTree(new DLQ.DLQ_MESSAGE(node, toNewIpAddressIndex, toNewIpAddressRangeIndex));
-                                e.printStackTrace();
-                                return Mono.error(e);
-                            }
-                        })).blockLast();
-
-
-        System.out.println(subscribe);
-
-        this.indexManager.swapIndexAlias(fromIpAddressIndex, toNewIpAddressIndex, Alias.IP_ADDRESS);
-        this.indexManager.swapIndexAlias(fromIpAddressRangeIndex, toNewIpAddressRangeIndex, Alias.IP_ADDRESS_RANGE);
-
-        LOGGER.info(String.format("Indices %s %s are fresh and switched to aliases %s %s",
-                toNewIpAddressIndex, toNewIpAddressRangeIndex, Alias.IP_ADDRESS, Alias.IP_ADDRESS_RANGE));
-
-        return IngestResponse.builder()
-                .processedFiles(processedFilesCounter.get())
-                .insertedIpAddressesAndRange(insertedIpAddressesAndRange.get())
-                .failedFiles(failedFilesCounter.get())
-                .totalFiles(flatten.size())
-                .build();
-    }
-
-    // TODO refactor all pjos to builder
-    private long processBlob(Blob blob, String path, Index ipAddress, Index ipAddressRange) throws Exception {
-
-        LOGGER.debug(String.format("Processing blob with %s ", path));
-        InputStream is = new ByteArrayInputStream(Base64.getMimeDecoder().decode(blob.getContent()));
-        String page = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        String[] allLines = page.trim().split("\n");
-
-        List<IpAddress> ipAddresses = new ArrayList<>();
-        List<IpAddress> ipAddressesRange = new ArrayList<>();
-
-        for (String line : allLines) {
-            if (line.charAt(0) == '#') continue;
-
-            String[] ipAddressAndMaskPair = IpAddressProcessorHelper.getIpAddressAndOrMask(line);
-            String mask = ipAddressAndMaskPair[1];
-
-            if (isValidMask(mask)) {
-                ipAddressesRange.add(new IpAddress(line, path, blob.getSha()));
-            } else {
-                ipAddresses.add(new IpAddress(line, path, blob.getSha()));
-            }
-
-        }
-
-        LOGGER.debug("Done executing processIP function. Saving to db");
-        this.indexIngest.insertIPAddressesToIndex(ipAddressesRange, ipAddressRange);
-        this.indexIngest.insertIPAddressesToIndex(ipAddresses, ipAddress);
-        return ipAddresses.size() + ipAddressesRange.size();
+        return flatten;
     }
 
     private Index[] getFromAndToIpAddressIndex() throws Exception {

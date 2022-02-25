@@ -27,7 +27,7 @@ public class BlockListController {
             return HttpResponse.badRequest(
                     BaseResponse.builder()
                             .status(HttpStatus.BAD_REQUEST.getCode())
-                            .message("Wrong IP address format")
+                            .error("Wrong IP address format")
                             .build());
         }
 
@@ -42,7 +42,6 @@ public class BlockListController {
             return HttpResponse.ok(
                     BaseResponse.builder()
                             .status(HttpStatus.OK.getCode())
-                            .message("success")
                             .entity(results)
                             .build());
 
@@ -50,8 +49,8 @@ public class BlockListController {
             ex.printStackTrace();
             return HttpResponse.serverError().body(
                     BaseResponse.builder()
-                            .status(HttpStatus.NOT_FOUND.getCode())
-                            .message(ex.getMessage())
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR.getCode())
+                            .error(ex.getMessage())
                             .build());
         }
     }

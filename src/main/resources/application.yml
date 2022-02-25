@@ -4,7 +4,7 @@ micronaut:
   http:
     client:
       max-content-length: 1000000000
-      read-timeout: "1200s"
+      read-timeout: "600s"
       ssl:
         handshake-timeout: "20s"
 jackson:
@@ -12,14 +12,14 @@ jackson:
 github:
   organization: firehol
   repo: blocklist-ipsets
-  username: USERNAME
+  username: username
   token: "TOKEN"
 elasticsearch:
   username: "admin"
-  password: "Myszk@12"
-  base-url: https://search-test-muet76wy3yw4rwkt5p5o7lnype.us-east-2.es.amazonaws.com
+  password: "admin"
+#  base-url: https://search-test-muet76wy3yw4rwkt5p5o7lnype.us-east-2.es.amazonaws.com
   max-bulk-size: 50000
-#  baseUrl: https://localhost:9200
+  baseUrl: https://localhost:9200
 #  maxBulkSize: 1000
 tracing:
   zipkin:

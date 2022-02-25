@@ -7,7 +7,6 @@ import com.myszon.model.IpAddress;
 import com.myszon.repository.IIndexIngest;
 import jakarta.inject.Singleton;
 import org.opensearch.action.bulk.BulkRequest;
-import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.client.RequestOptions;
 import org.opensearch.client.RestHighLevelClient;

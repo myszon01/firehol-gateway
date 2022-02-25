@@ -7,6 +7,6 @@ import lombok.Getter;
 @Introspected @Getter @Builder
 public class BaseResponse<T> {
     int status;
-    String message;
+    String error;
     T entity;
 }
