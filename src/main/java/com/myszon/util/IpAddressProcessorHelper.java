@@ -2,7 +2,12 @@ package com.myszon.util;
 
 import com.myszon.api.responses.Tree;
 import com.myszon.api.responses.TreeType;
+import io.micronaut.http.client.exceptions.ReadTimeoutException;
+import io.netty.channel.ConnectTimeoutException;
+import io.netty.handler.ssl.SslHandshakeTimeoutException;
 
+import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,5 +48,14 @@ public class IpAddressProcessorHelper {
         } catch (NumberFormatException ex) {
             return false;
         }
+    }
+
+    public static boolean shouldIgnoreError(Throwable ex) {
+        return ex.getCause() instanceof ConnectTimeoutException
+                || ex.getCause() instanceof SslHandshakeTimeoutException
+                || ex.getCause() instanceof IOException
+                || ex.getCause() instanceof ClosedChannelException
+                || ex.getCause() instanceof ReadTimeoutException
+                || ex instanceof ReadTimeoutException;
     }
 }

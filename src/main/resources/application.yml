@@ -17,9 +17,9 @@ github:
 elasticsearch:
   username: "admin"
   password: "admin"
-#  base-url: https://search-test-muet76wy3yw4rwkt5p5o7lnype.us-east-2.es.amazonaws.com
+  base-url: https://search-test-muet76wy3yw4rwkt5p5o7lnype.us-east-2.es.amazonaws.com
   max-bulk-size: 50000
-  baseUrl: https://localhost:9200
+#  baseUrl: https://localhost:9200
 #  maxBulkSize: 1000
 tracing:
   zipkin:

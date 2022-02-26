@@ -15,8 +15,12 @@ import com.myszon.repository.IIndexManager;
 import com.myszon.util.IpAddressProcessorHelper;
 import com.myszon.util.QueueWrapper;
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.http.client.exceptions.ReadTimeoutException;
+import io.netty.channel.ConnectTimeoutException;
+import io.netty.handler.ssl.SslHandshakeTimeoutException;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
+import kotlin.collections.EmptySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -25,6 +29,7 @@ import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -91,16 +96,18 @@ public class IpAddressProcessor implements IndexProcessor {
                 .flatMap(node -> Mono.defer(() -> this.githubApiClient.getBlobBySha(node.getSha()))
                         // TODO refactor to continue only on connection errors. Change loggers to debug
                         .retryWhen(
-                                Retry.backoff(6, Duration.ofMillis(1000))
+                                Retry.backoff(6, Duration.ofMillis(500))
                                         .doAfterRetry(retrySignal -> LOGGER.info("Retried "
                                                 + retrySignal.totalRetries()))
 
                                         .onRetryExhaustedThrow((retryBackoffSpec, retrySignal)
                                                 -> retrySignal.failure()))
-                        .onErrorResume(Exception.class, (msg) -> {
+                        .onErrorResume((msg) -> {
+                            if (!IpAddressProcessorHelper.shouldIgnoreError(msg)) return Mono.error(msg);
+
                             // TODO Send msg to SNS -> SQS
                             queueWrapper.put(node);
-                            LOGGER.debug(String.format("Error when processing doc. Total failed docs %s ",
+                            LOGGER.error(String.format("Error when processing doc. Total failed docs %s ",
                                     failedFilesCounter.incrementAndGet()));
                             msg.printStackTrace();
                             return Mono.empty();
@@ -115,12 +122,16 @@ public class IpAddressProcessor implements IndexProcessor {
                         .flatMap(ipCount ->
                         {
                             Integer curFileCount = processedFilesCounter.incrementAndGet();
-                            LOGGER.debug(String.format("Blob processed. Current processed doc count " +
+                            LOGGER.info(String.format("Blob processed. Current processed doc count " +
                                             "is %s and inserted ips %s ", curFileCount,
                                     insertedIpAddressesAndRange.addAndGet(ipCount)));
                             return Mono.just(curFileCount);
                         })
                 ).blockLast();
+
+        if (10 < failedFilesCounter.get() * 100 / flatten.size()) {
+            throw new Exception("There is over 10% failed processed files. Swapping index is canceled.");
+        }
 
         LOGGER.info("Swapping old indexes to new");
         this.indexManager.swapIndexAlias(fromIpAddressIndex, toNewIpAddressIndex, Alias.IP_ADDRESS);
@@ -141,14 +152,13 @@ public class IpAddressProcessor implements IndexProcessor {
 
         LOGGER.debug(String.format("Processing blob with %s ", path));
         Mono<Integer> ipRangeCount = Mono.just(blob.getContent())
-                .map(content -> Base64.getMimeDecoder().decode(content))
-                .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
+                .map(content -> new String(Base64.getMimeDecoder().decode(content), StandardCharsets.UTF_8))
                 .flatMapMany(page -> Flux.fromArray(page.trim().split("\n")))
                 .filter(line -> line.charAt(0) != '#')
                 .map(IpAddressProcessorHelper::getIpAddressAndOrMask)
                 .filter(ipAddressAndOrMask -> isValidMask(ipAddressAndOrMask[1]))
                 .map(ipRange -> IpAddress.builder()
-                        .ipAddress(ipRange[0] + "/" + ipRange[1])
+                        .ipAddress((ipRange[0] + "/" + ipRange[1]).trim())
                         .path(path)
                         .sha(blob.getSha())
                         .build())
@@ -164,14 +174,13 @@ public class IpAddressProcessor implements IndexProcessor {
                 });
 
         Mono<Integer> ipAddressesCount = Mono.just(blob.getContent())
-                .map(content -> Base64.getMimeDecoder().decode(content))
-                .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
+                .map(content -> new String(Base64.getMimeDecoder().decode(content), StandardCharsets.UTF_8))
                 .flatMapMany(page -> Flux.fromArray(page.trim().split("\n")))
                 .filter(line -> line.charAt(0) != '#')
                 .map(IpAddressProcessorHelper::getIpAddressAndOrMask)
                 .filter(ipAddressAndOrMask -> !isValidMask(ipAddressAndOrMask[1]))
                 .map(ipRange -> IpAddress.builder()
-                        .ipAddress(ipRange[0])
+                        .ipAddress(ipRange[0].trim())
                         .path(path)
                         .sha(blob.getSha())
                         .build())
@@ -192,8 +201,10 @@ public class IpAddressProcessor implements IndexProcessor {
     }
 
     private Set<Tree> gitHubRepoToFlatSet() {
-        Commit commit = githubApiClient.getCommits().get(0);
-        Tree rootTree = githubApiClient.getTreeBySha(commit.getCommit().getTree().getSha());
+        List<Commit> commits = githubApiClient.getCommits();
+        if (commits.isEmpty()) return Collections.emptySet();
+
+        Tree rootTree = githubApiClient.getTreeBySha(commits.get(0).getCommit().getTree().getSha());
         rootTree.setType(TreeType.TREE.toString());
 
         Set<Tree> flatten = new HashSet<>();
@@ -210,7 +221,8 @@ public class IpAddressProcessor implements IndexProcessor {
                 if (node.getSha() == null) continue;
                 flatten.add(node);
             } else {
-                LOGGER.debug(String.format("File %s is tree. calling github", node.getPath()));
+                LOGGER.debug(String.format("File %s is tree. calling github to enrich tree and add to queue",
+                        node.getPath()));
                 node = this.githubApiClient.getTreeBySha(node.getSha());
                 pageQueue.addAll(node.getTree().stream()
                         .filter(IpAddressProcessorHelper::shouldIgnoreBlobOrTree)
