@@ -29,3 +29,4 @@ tracing:
     sampler:
       probability: 1
     local-service-name: "fireholGateway"
+cron: "0 0 12 * * ?"

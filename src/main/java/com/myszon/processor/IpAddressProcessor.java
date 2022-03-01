@@ -15,12 +15,9 @@ import com.myszon.repository.IIndexManager;
 import com.myszon.util.IpAddressProcessorHelper;
 import com.myszon.util.QueueWrapper;
 import io.micronaut.context.annotation.Requires;
-import io.micronaut.http.client.exceptions.ReadTimeoutException;
-import io.netty.channel.ConnectTimeoutException;
-import io.netty.handler.ssl.SslHandshakeTimeoutException;
+import io.micronaut.scheduling.annotation.Scheduled;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
-import kotlin.collections.EmptySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -29,7 +26,6 @@ import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -69,8 +65,7 @@ public class IpAddressProcessor implements IndexProcessor {
         return Set.of(Alias.IP_ADDRESS, Alias.IP_ADDRESS_RANGE);
     }
 
-
-    @Override
+    @Override @Scheduled(cron = "${cron}")
     public IngestResponse refreshIndex() throws Exception {
         Index[] fromAndToIpAddressIndex = this.getFromAndToIpAddressIndex();
         Index fromIpAddressIndex = fromAndToIpAddressIndex[0];
